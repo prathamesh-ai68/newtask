@@ -6,22 +6,12 @@ jobs:
   my-job:
     runs-on: ubuntu-latest
     steps:
-      - name: Say Hello
-        run: echo "Hello World"
+      - name: Simulate Failure
+        run: exit 1  # This will make the job fail intentionally
 
-      - name: Simulate Failure (remove this in real case)
-        run: exit 1  # This will fail the job, for testing email
-
-      - name: Send Email on Failure
+      - name: Send Notification on Failure
         if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.your-email-provider.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "GitHub Actions Build Failed"
-          body: "The Hello World workflow failed. Check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          to: prathameshp.nethority@gmail.com
-          from: GitHub Actions <prathameshp.nethority@gmail.com
->
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"❌ GitHub Actions job failed in repo: '${{ github.repository }}'.\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+          ${{ secrets.WEBHOOK_URL }}
